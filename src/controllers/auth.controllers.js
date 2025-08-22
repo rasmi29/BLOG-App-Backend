@@ -153,6 +153,7 @@ const loginUser = asyncHandler(async (req, res) => {
                 _id: user._id,
                 email: user.email,
                 username: user.username,
+                accessToken
             },
         }),
     );
@@ -178,4 +179,58 @@ const logoutUser = asyncHandler(async (req, res) => {
     );
 });
 
-export { registerUser, verifyEmail, loginUser, logoutUser };
+// resendVerificationEmail
+const resendVerificationEmail = asyncHandler(async(req,res)=>{
+    //fetch user email from req
+    const { email } = req.body;
+    if(!email){
+        throw new ApiError(404, "email not found , please give email");
+    }
+    //check user exists or not 
+    const user = await User.findOne({ email });
+    //if user not found
+    if (!user) {
+        throw new ApiError(404, "user not found,register first");
+    }
+    //check user is verified or not
+    if(user.isEmailVerified){
+        throw new ApiError(400, "user already verified,go to login");
+    } 
+    //create a verification token to verify email
+    const { hashedToken, unHashedToken, tokenExpiry } =
+        user.generateTemporaryToken();
+    //check token generate or not
+    if (!hashedToken || !unHashedToken || !tokenExpiry) {
+        throw new ApiError(500, "error during verification token generation");
+    }
+    //save token in database
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationExpiry = tokenExpiry;
+
+    //send email for verification
+    const verificationUrl = `http://localhost:8000/api/v1/auth/verify?token=${unHashedToken}`;
+    //create mail body
+    const mailOption = emailVerificationMailGenContent(
+        user.username,
+        verificationUrl,
+    );
+    //send mail
+    await sendMail({
+        email: email,
+        subject: "Verify your Blog Posting account",
+        mailGenContent: mailOption,
+    });
+
+    //save user in database
+    await user.save();
+    //send response 
+    return res
+        .status(200)
+        .json(new ApiResponse(200, "Verification email resent successfully"));
+})
+// refreshAccessToken
+// forgotPasswordRequest
+// changeCurrentPassword
+// getCurrentUser
+
+export { registerUser, verifyEmail, loginUser, logoutUser, resendVerificationEmail };
