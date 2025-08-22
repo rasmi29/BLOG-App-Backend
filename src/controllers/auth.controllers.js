@@ -1,3 +1,5 @@
+import crypto from "crypto"
+import bcrypt from "bcryptjs"
 import ApiError from "../utils/api-error.js";
 import ApiResponse from "../utils/api-response.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -8,7 +10,6 @@ import {
 } from "../utils/email.util.js";
 
 //register user
-
 const registerUser = asyncHandler(async (req, res) => {
     //fetch data
     const { email, username, password } = req.body;
@@ -43,7 +44,7 @@ const registerUser = asyncHandler(async (req, res) => {
     user.emailVerificationExpiry = tokenExpiry;
 
     //send email for verification
-    const verificationUrl = `http://localhost:8000/api/v1/user/verify?token=${unHashedToken}`;
+    const verificationUrl = `http://localhost:8000/api/v1/auth/verify?token=${unHashedToken}`;
     //create mail body
     const mailOption = emailVerificationMailGenContent(
         username,
@@ -68,4 +69,93 @@ const registerUser = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, safeUser, "User created successfully"));
 });
 
-export { registerUser };
+//verify email
+const verifyEmail = asyncHandler(async (req, res) => {
+    //fetch token
+    const token = req.query.token;
+    //validate token
+    if (!token) {
+        throw new ApiError(400, "token not available");
+    }
+    //hashing the token 
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    //fetch user by hashed token
+    const user = await User.findOne({ emailVerificationToken: hashedToken });
+    //check user found or not
+    if (!user) {
+        throw new ApiError(400, "user not found during email verification");
+    }
+    //if user found then check expiry time
+    if (Date.now() > user.emailVerificationExpiry) {
+        throw new ApiError(
+            404,
+            "verification token expired , please resend again",
+        );
+    }
+    //update user
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpiry = undefined;
+    user.isEmailVerified = true;
+
+    //save user
+    await user.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            message: "user email verified successfully",
+        }),
+    );
+});
+
+//login user
+const loginUser = asyncHandler(async (req, res) => {
+    //fetch data
+    const { email, password } = req.body;
+
+    //check user exist or not
+    const user = await User.findOne({ email });
+    //if user not found
+    if (!user) {
+        throw new ApiError(404, "user not found,register first");
+    }
+    //check password
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    if (!isPasswordMatch) {
+        throw new ApiError(401, "password does not match");
+    }
+    //check if user is already login
+
+    //generate referesh token
+    const refreshToken = await user.generateRefreshToken();
+    const accessToken = await user.generateAccessToken();
+    
+    //validate refresh token & access token
+    if (!refreshToken || !accessToken) {
+        throw new ApiError(500, "error in token generation");
+    }
+    //store refreshtoken in cookie
+    res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    //store accesstoken in header
+    res.setHeader("Authorization", `Bearer ${accessToken}`);
+
+    //store refresh token in db
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            message: "Login successful",
+            user: {
+                _id: user._id,
+                email: user.email,
+                username: user.username,
+            },
+        }),
+    );
+});
+
+export { registerUser, verifyEmail, loginUser };
