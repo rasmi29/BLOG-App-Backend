@@ -9,10 +9,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 //router imports
-
+import authRouter from "./routes/auth.routes.js"
 
 //routing
-
+app.use("/api/v1/user", authRouter);
 
 //export app
 export default app;

@@ -91,7 +91,6 @@ userSchema.pre("save", async function (next) {
     }
 });
 
-
 //verify password to authenticate
 userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
@@ -123,7 +122,7 @@ userSchema.methods.generateRefreshToken = function () {
     );
 };
 
-// to geneerate any temporary token
+// to generate any temporary token
 userSchema.methods.generateTemporaryToken = function () {
     const unHashedToken = crypto.randomBytes(32).toString("hex");
     const hashedToken = crypto
@@ -132,7 +131,7 @@ userSchema.methods.generateTemporaryToken = function () {
         .digest("hex");
 
     const tokenExpiry = Date.now() + 20 * 60 * 1000;
-    return hashedToken, unHashedToken, tokenExpiry;
+    return { hashedToken, unHashedToken, tokenExpiry };
 };
 
 const User = mongoose.model("User", userSchema);

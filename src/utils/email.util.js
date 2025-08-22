@@ -1,12 +1,12 @@
 import Mailgen from "mailgen";
 import nodemailer from "nodemailer";
-import ApiError from "./api-error";
+import ApiError from "./api-error.js";
 
 const sendMail = async (options) => {
     const mailGenerator = new Mailgen({
         theme: "default",
         product: {
-            name: "Task Manager",
+            name: "Blogify",
             link: "https://mailgen.js/",
         },
     });
@@ -26,7 +26,7 @@ const sendMail = async (options) => {
 
     try {
         await transporter.sendMail({
-            from: '"Task Manager" <noreply@taskmanager.com>', // Updated sender name and email
+            from: '"Blogify" <noreply@blogify.com>',
             to: options.email,
             subject: options.subject,
             text: emailText,
