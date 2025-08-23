@@ -2,7 +2,6 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { type } from "os";
 
 const userSchema = new Schema(
     {
@@ -13,7 +12,14 @@ const userSchema = new Schema(
             trim: true,
             required: [true, "Username is required"],
             minlength: [3, "Username must be at least 3 characters long"],
-            maxlength: [30, "Username cannot exceed 12 characters"],
+            maxlength: [15, "Username cannot exceed 15 characters"],
+            validate: {
+                validator: function (v) {
+                    return /^[a-zA-Z0-9_-]+$/.test(v);
+                },
+                message:
+                    "Username can only contain letters, numbers, underscores, and hyphens",
+            },
         },
         email: {
             type: String,
@@ -81,6 +87,14 @@ const userSchema = new Schema(
                     url: {
                         type: String,
                         required: true,
+                        validate: {
+                            validator: function (v) {
+                                return validator.isURL(v, {
+                                    require_protocol: true,
+                                });
+                            },
+                            message: "Invalid URL format",
+                        },
                     },
                 },
             ],
@@ -161,14 +175,6 @@ const userSchema = new Schema(
                     },
                 },
             ],
-            followersCount: {
-                type: Number,
-                default: 0,
-            },
-            followingCount: {
-                type: Number,
-                default: 0,
-            },
         },
         isEmailVerified: {
             type: Boolean,
@@ -190,36 +196,10 @@ const userSchema = new Schema(
             type: Date,
         },
 
-        // Activity and Analytics
-        activity: {
-            lastLogin: Date,
-            lastActive: Date,
-            loginCount: { type: Number, default: 0 },
-            loginHistory: [
-                {
-                    timestamp: Date,
-                    ip: String,
-                    userAgent: String,
-                    location: {
-                        country: String,
-                        city: String,
-                    },
-                    success: Boolean,
-                },
-            ],
-            sessions: [
-                {
-                    sessionId: String,
-                    device: String,
-                    browser: String,
-                    ip: String,
-                    location: String,
-                    createdAt: Date,
-                    lastActive: Date,
-                    isActive: { type: Boolean, default: true },
-                },
-            ],
-        },
+        lastLogin: Date,
+        lastActive: Date,
+        loginCount: { type: Number, default: 0 },
+
         //user statistics
         stats: {
             blogsPublished: { type: Number, default: 0 },
@@ -289,8 +269,8 @@ const userSchema = new Schema(
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
         this.password = await bcrypt.hash(this.password, 10);
-        next();
     }
+    next();
 });
 
 //verify password to authenticate
@@ -335,6 +315,28 @@ userSchema.methods.generateTemporaryToken = function () {
     const tokenExpiry = Date.now() + 20 * 60 * 1000;
     return { hashedToken, unHashedToken, tokenExpiry };
 };
+
+// Indexes
+userSchema.index({ username: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ status: 1 });
+userSchema.index({ lastLogin: -1 });
+userSchema.index({ "profile.skills": 1 });
+userSchema.index({ "profile.interests": 1 });
+userSchema.index({ "social.followers.user": 1 });
+userSchema.index({ "social.following.user": 1 });
+userSchema.index({ "reading.bookmarks.blog": 1 });
+userSchema.index({ "reading.readingHistory.blog": 1 });
+
+// Text search index
+userSchema.index({
+  username: "text",
+  email: "text",
+  "profile.firstName": "text",
+  "profile.lastName": "text",
+  "profile.bio": "text"
+});
+
 
 
 const User = mongoose.model("User", userSchema);

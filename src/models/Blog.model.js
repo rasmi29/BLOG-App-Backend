@@ -257,6 +257,13 @@ blogSchema.pre("save", function (next) {
     next();
 });
 
+// Compound index for filtering + sorting
+blogSchema.index({ category: 1, status: 1, publishedAt: -1 });
+
+// Text index for searching
+blogSchema.index({ title: "text", content: "text", tags: "text" });
+
+
 const Blog = mongoose.model("Blog", blogSchema);
 
 export default Blog;
