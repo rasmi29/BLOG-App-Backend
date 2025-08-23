@@ -1,9 +1,44 @@
-/**
- * 1. createBlog
- * - Creates a new blog post
- * - Validates input data, generates slug, calculates read time
- * - Handles draft/published status
- */
+
+import Blog from "../models/Blog.model.js";
+import ApiError from "../utils/api-error.js";
+import ApiResponse from "../utils/api-response.js";
+import asyncHandler from "../utils/asyncHandler.js";
+
+
+//1. create blog
+
+const createBlog = asyncHandler(async (req, res) => {
+    //fetch data from body
+    const { title, content, category, summary, tags, coverImage, status } =
+        req.body;
+    // 1. Validate required fields
+    if (!title || !content || !category) {
+        throw new ApiError(400, "Title, category and content are required");
+    }
+    //create a blog
+    const blog = await Blog.create({
+        title,
+        content,
+        author: req.user._id,
+        category: category || "Other",
+        tags: tags || [],
+        coverImage: coverImage || {},
+        status: status || "draft",
+        summary: summary || undefined,
+    });
+
+    //check blog created or not
+    if (!blog) {
+        throw new ApiError(500, "problem in creating blog instances");
+    }
+
+
+    //send response
+    res.status(201).json(
+        new ApiResponse(201, blog, "New blog created successfully"),
+    );
+
+});
 
 /**
  * 2. getAllBlogs
@@ -46,7 +81,6 @@
  * - Updates publishedAt timestamp
  * - Validates content before publishing
  */
-
 
 /**
  * 8. unpublishBlog
@@ -118,3 +152,5 @@
  * - Suggests related blogs based on tags/category
  * - Machine learning recommendations (optional)
  */
+
+export { createBlog };

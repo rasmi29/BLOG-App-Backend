@@ -25,9 +25,9 @@ const blogSchema = new Schema(
             minlength: [50, "Content must be at least 50 characters long"],
         },
 
-        excerpt: {
+        summary: {
             type: String,
-            maxlength: [300, "Excerpt cannot exceed 300 characters"],
+            maxlength: [300, "Summary cannot exceed 300 characters"],
             trim: true,
         },
 
@@ -75,18 +75,16 @@ const blogSchema = new Schema(
 
         //photo
 
-        images: [
-            {
-                url: String,
-                alt: String,
-                caption: String,
-            },
-        ],
+        coverImage: {
+            url: String,
+            alt: String,
+            caption: String,
+        },
 
         // Publishing and Status Management
         status: {
             type: String,
-            enum: ["draft", "published", "archived", "under_review"],
+            enum: ["draft", "published", "archived"],
             default: "draft",
             index: true,
         },
@@ -150,13 +148,6 @@ const blogSchema = new Schema(
             default: 0,
         },
 
-        comments: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Comment",
-            },
-        ],
-
         // Content Analysis
         wordCount: {
             type: Number,
@@ -183,7 +174,6 @@ const blogSchema = new Schema(
         // Featured and Promotion
         isFeatured: {
             type: Boolean,
-            default: false,
             index: true,
         },
 
@@ -193,7 +183,6 @@ const blogSchema = new Schema(
 
         isSponsored: {
             type: Boolean,
-            default: false,
         },
     },
     {
@@ -262,7 +251,6 @@ blogSchema.index({ category: 1, status: 1, publishedAt: -1 });
 
 // Text index for searching
 blogSchema.index({ title: "text", content: "text", tags: "text" });
-
 
 const Blog = mongoose.model("Blog", blogSchema);
 
