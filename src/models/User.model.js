@@ -317,21 +317,18 @@ userSchema.methods.generateTemporaryToken = function () {
 };
 
 // Indexes
-userSchema.index({ username: 1 }, { unique: true });
-userSchema.index({ email: 1 }, { unique: true });
+
 userSchema.index({ status: 1 });
 userSchema.index({ lastLogin: -1 });
 userSchema.index({ "profile.skills": 1 });
 userSchema.index({ "profile.interests": 1 });
 userSchema.index({ "social.followers.user": 1 });
-userSchema.index({ "social.following.user": 1 });
 userSchema.index({ "reading.bookmarks.blog": 1 });
 userSchema.index({ "reading.readingHistory.blog": 1 });
 
 // Text search index
 userSchema.index({
   username: "text",
-  email: "text",
   "profile.firstName": "text",
   "profile.lastName": "text",
   "profile.bio": "text"

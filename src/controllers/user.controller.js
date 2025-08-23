@@ -1,9 +1,23 @@
-/**
- * 1. getProfile / getMyProfile
- * - Retrieves current authenticated user's profile
- * - Returns complete profile information
- * - Excludes sensitive data (password, tokens)
- */
+import ApiError from "../utils/api-error.js";
+import ApiResponse from "../utils/api-response.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import User from "../models/User.model.js";
+
+
+// 1. getMyProfile
+
+const getMyProfile = asyncHandler(async (req, res) => {
+    //fetch user data ;
+    const user = await User.findById(req.user._id)
+        .select("-password -refreshToken")
+        .lean();
+    if (!user) {
+        throw new ApiError(404, "user not found , register again");
+    }
+    res.status(200).json(
+        new ApiResponse(200, user, "User profile fetched successfully"),
+    );
+});
 
 /**
  * 2. getUserByUsername
@@ -19,14 +33,12 @@
  * - Password strength validation
  */
 
-
 /**
  * 4. deactivateAccount
  * - Soft delete user account
  * - Maintains data integrity
  * - Sets account as inactive
  */
-
 
 /**
  * 5. getFollowers
@@ -76,3 +88,5 @@
  * - Management interface support
  * - Privacy controls
  */
+
+export { getMyProfile };

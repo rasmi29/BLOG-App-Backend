@@ -114,7 +114,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
 
     //check user exist or not
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     //if user not found
     if (!user) {
         throw new ApiError(404, "user not found,register first");
@@ -139,9 +139,6 @@ const loginUser = asyncHandler(async (req, res) => {
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
     });
-
-    //store accesstoken in header
-    res.setHeader("Authorization", `Bearer ${accessToken}`);
 
     //store refresh token in db
     user.refreshToken = refreshToken;

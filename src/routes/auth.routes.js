@@ -7,7 +7,7 @@ import {
     resendVerificationEmail,
     forgotPassword,
     resetPassword,
-} from "../controllers/auth.controllers.js";
+} from "../controllers/auth.controller.js";
 import validate from "../middlewares/validator.middleware.js";
 import {
     userRegistrationValidator,

@@ -10,9 +10,11 @@ app.use(express.urlencoded({ extended: true }));
 
 //router imports
 import authRouter from "./routes/auth.routes.js"
+import userRouter from "./routes/user.routes.js"
 
 //routing
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/user", userRouter);
 
 //export app
 export default app; 
