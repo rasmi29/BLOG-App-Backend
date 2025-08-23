@@ -52,4 +52,15 @@ const emailValidator = () => {
     ];
 };
 
-export { userRegistrationValidator, userLoginValidator,emailValidator };
+const newPasswordValidator = () => {
+    return [
+        body("newPassword")
+            .trim()
+            .notEmpty()
+            .withMessage("password can not be empty")
+            .isLength({ min: 6 })
+            .withMessage("password length should be min of 6 character"),
+    ];
+};
+
+export { userRegistrationValidator, userLoginValidator,emailValidator, newPasswordValidator };
