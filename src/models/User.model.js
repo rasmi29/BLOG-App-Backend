@@ -122,7 +122,7 @@ const userSchema = new Schema(
                 "banned",
                 "pending_verification",
             ],
-            default: "active",
+            default: "pending_verification",
         },
         // Social Features
         social: {
@@ -199,6 +199,7 @@ const userSchema = new Schema(
         lastLogin: Date,
         lastActive: Date,
         loginCount: { type: Number, default: 0 },
+        deactivatedAt:Date,
 
         //user statistics
         stats: {

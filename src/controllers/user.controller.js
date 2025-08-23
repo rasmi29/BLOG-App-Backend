@@ -76,12 +76,37 @@ const changePassword = asyncHandler(async (req, res) => {
 
 
 
-/**
- * 4. deactivateAccount
- * - Soft delete user account
- * - Maintains data integrity
- * - Sets account as inactive
- */
+
+// 4. deactivateAccount
+
+const deactivateAccount = asyncHandler(async (req, res) => {
+  const userId = req.user._id; 
+
+  // fetch user
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // If already deactivated
+  if (user.status === "inactive") {
+    throw new ApiError(400, "Account is already deactivated");
+  }
+
+  // Mark account inactive (soft delete)
+  user.status = "inactive";
+  user.lastActive = new Date();
+  user.deactivatedAt = new Date();
+
+  //remove tokens
+  user.refreshToken = undefined
+  await user.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Account deactivated successfully"));
+});
+
 
 /**
  * 5. getFollowers
@@ -132,4 +157,4 @@ const changePassword = asyncHandler(async (req, res) => {
  * - Privacy controls
  */
 
-export { getMyProfile, changePassword ,getUserByUsername };
+export { getMyProfile, changePassword ,getUserByUsername, deactivateAccount };
