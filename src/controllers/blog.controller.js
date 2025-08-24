@@ -32,7 +32,6 @@ const createBlog = asyncHandler(async (req, res) => {
         throw new ApiError(500, "problem in creating blog instances");
     }
 
-
     //send response
     res.status(201).json(
         new ApiResponse(201, blog, "New blog created successfully"),
@@ -46,6 +45,62 @@ const createBlog = asyncHandler(async (req, res) => {
  * - Supports filtering by category, tags, author
  * - Includes sorting options (newest, oldest, most liked, trending)
  */
+
+const getAllBlogs = asyncHandler(async (req, res) => {
+    // fetch query params
+    const {
+        page = 1,
+        limit = 10,
+        category,
+        tags,
+        author,
+        sort = "newest", 
+    } = req.query;
+
+    // build filter
+    let filter = { status: "published" };
+
+    if (category) filter.category = category;
+    if (author) filter.author = author;
+    if (tags) {
+        // tags can be comma-separated: ?tags=js,node,webdev
+        filter.tags = { $in: tags.split(",") };
+    }
+
+    // build sort
+    let sortOption = { publishedAt: -1 }; // default newest
+    if (sort === "oldest") sortOption = { publishedAt: 1 };
+    if (sort === "most_liked") sortOption = { likeCount: -1 };
+    if (sort === "trending") sortOption = { "views.total": -1 };
+
+    // pagination
+    const skip = (Number(page) - 1) * Number(limit);
+
+    // fetch blogs
+    const blogs = await Blog.find(filter)
+        .populate("author", "username email") // fetch author details
+        .sort(sortOption)
+        .skip(skip)
+        .limit(Number(limit))
+        .lean();
+
+    //count no of files after filteration
+    const total = await Blog.countDocuments(filter);
+
+    // response
+    res.status(200).json(
+        new ApiResponse(200, {
+            blogs,
+            pagination: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                totalPages: Math.ceil(total / limit),
+            },
+        }, "Blogs fetched successfully")
+    );
+});
+
 
 /**
  * 3. getBlogById
@@ -153,4 +208,4 @@ const createBlog = asyncHandler(async (req, res) => {
  * - Machine learning recommendations (optional)
  */
 
-export { createBlog };
+export { createBlog, getAllBlogs };
