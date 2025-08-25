@@ -229,7 +229,7 @@ npm run logs         # View application logs
 
 ### Base URL
 ```
-http://localhost:5000/api/v1
+http://localhost:8000/api/v1
 ```
 
 ### Authentication Endpoints
